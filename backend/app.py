@@ -25,7 +25,6 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Constants
 UPLOAD_FOLDER = 'uploads'
-STATIC_DIR = 'static'
 MODEL_DIR = 'models'
 INDEX_PATH = os.path.join(MODEL_DIR, 'faiss_index.pkl')
 METADATA_PATH = os.path.join(MODEL_DIR, 'metadata.pkl')
@@ -35,7 +34,7 @@ DOCUMENTS_FOLDER = 'uploads'  # Folder to monitor for automatic indexing
 PROCESSED_FILES_REGISTRY = os.path.join(MODEL_DIR, 'processed_files.pkl')
 
 # Create necessary directories
-for directory in [UPLOAD_FOLDER, STATIC_DIR, MODEL_DIR]:
+for directory in [UPLOAD_FOLDER, MODEL_DIR]:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -78,7 +77,6 @@ initialize_index()
 def home():
     """Root endpoint for testing."""
     return jsonify({'message': 'Welcome to the Local RAG Chatbot API!'})
-
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     """Upload file endpoint for multiple document formats (PDF, DOCX, PPTX)."""
@@ -104,12 +102,12 @@ def upload_file():
         file.save(filepath)
         print(f"File saved successfully at {filepath}")
 
-        # Save in static directory for permanent storage
-        static_filepath = os.path.join(STATIC_DIR, filename)
-        with open(static_filepath, 'wb') as f_static:
-            file.seek(0)  # Reset file pointer to beginning
-            f_static.write(file.read())
-        print(f"File saved permanently at {static_filepath}")
+        # # Save in static directory for permanent storage
+        # static_filepath = os.path.join(STATIC_DIR, filename)
+        # with open(static_filepath, 'wb') as f_static:
+        #     file.seek(0)  # Reset file pointer to beginning
+        #     f_static.write(file.read())
+        # print(f"File saved permanently at {static_filepath}")
 
         # Extract text based on file type
         if file_extension == '.pdf':
@@ -537,6 +535,8 @@ Requête: {query}"""
         print(f"Error in augment_prompt: {e}")
         # Fallback to regular query without context
         return f"Réponds à cette requête: {query}", []
+import requests
+
 def generate_response_ollama(augmented_query, history=None):
     """Generate response using Ollama API."""
     try:
@@ -555,6 +555,7 @@ def generate_response_ollama(augmented_query, history=None):
         if history and isinstance(history, list):
             payload["context"] = history
             print(payload)
+
         # Make the API call to Ollama
         response = requests.post(
             "http://localhost:11434/api/generate",
@@ -565,8 +566,14 @@ def generate_response_ollama(augmented_query, history=None):
         if response.status_code == 200:
             result = response.json()
             response_content = result.get("response", "")
-            # Return the context for future calls
-            context = result.get("context", None)
+
+            # Supprimer les balises <think> et </think> avec split() puis enlever les espaces inutiles
+            if "<think>" in response_content and "</think>" in response_content:
+                response_content = response_content.split("<think>")[0] + response_content.split("</think>")[-1]
+
+            # Supprimer les espaces avant et après la réponse
+            response_content = response_content.strip()
+
             print(f"Response generated successfully.")
             return response_content
         else:
@@ -576,44 +583,7 @@ def generate_response_ollama(augmented_query, history=None):
     except Exception as e:
         print(f"Error generating response: {e}")
         return "Désolé, je n'ai pas pu générer une réponse. Veuillez réessayer."
-    """Generate response using Ollama API."""
-    try:
-        # Prepare the prompt with system message
-        system_message = "Vous êtes un assistant utile qui répond aux questions basées sur les contextes fournis. Si les contextes ne contiennent pas l'information demandée, indiquez clairement que vous ne pouvez pas répondre à la question avec les données dont vous disposez."
-        
-        # Construct the payload for Ollama
-        payload = {
-            "model": "deepseek-r1:7b",
-            "prompt": augmented_query,
-            "system": system_message,
-            "stream": False
-        }
-        
-        # Add chat history if provided
-        if history:
-            payload["context"] = history
-        
-        # Make the API call to Ollama
-        response = requests.post(
-            "http://localhost:11434/api/generate",
-            json=payload
-        )
-        
-        # Check if the request was successful
-        if response.status_code == 200:
-            result = response.json()
-            response_content = result.get("response", "")
-            # If context was provided, return it for future calls
-            context = result.get("context", None)
-            print(f"Response generated successfully.")
-            return response_content
-        else:
-            print(f"Error from Ollama API: {response.status_code}, {response.text}")
-            return "Désolé, je n'ai pas pu générer une réponse. Veuillez réessayer."
-            
-    except Exception as e:
-        print(f"Error generating response: {e}")
-        return "Désolé, je n'ai pas pu générer une réponse. Veuillez réessayer."
+
 
 # Add this to your main function
 if __name__ == '__main__':
