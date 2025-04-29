@@ -4,11 +4,13 @@ import {
   Route,
   Link,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import FileUpload from "./components/FileUpload";
 import DocumentManager from "./components/DocumentManager";
 import Chat from "./components/Chat";
-import { useState, useEffect } from "react";
+import HomePage from "./components/HomePage"; // Importez le nouveau composant
+import { useState, useEffect, ReactNode } from "react";
 import {
   MdMenu,
   MdFolderOpen,
@@ -16,6 +18,7 @@ import {
   MdOutlineSettings,
   MdLightMode,
   MdDarkMode,
+  MdHome,
 } from "react-icons/md";
 
 // Theme toggle functionality
@@ -42,48 +45,71 @@ interface NavbarProps {
   toggleDarkMode: () => void;
 }
 
-const Navbar = ({ darkMode, toggleDarkMode }: NavbarProps) => (
-  <div className="flex justify-center w-full">
-    <div className="w-full mx-4 md:mx-12 lg:mx-20 bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm px-4 py-3 flex justify-between items-center z-10 transition-all duration-300 rounded-xl mt-4 border-[0.5px] border-gray-100 dark:border-gray-700 shadow-sm">
-      <div className="flex items-center">
-        <img
-          src="téléchargement.png"
-          alt="NETCOM"
-          className="h-7 w-auto hidden md:block"
-        />
-      </div>
-      <div className="flex items-center space-x-4">
-        <nav className="space-x-6 hidden md:flex">
-          <Link
-            to="/"
-            className="text-sm text-gray-700 dark:text-gray-200 hover:text-orange-500 dark:hover:text-orange-400 transition font-medium relative group"
+const Navbar = ({ darkMode, toggleDarkMode }: NavbarProps) => {
+  const location = useLocation();
+
+  return (
+    <div className="flex justify-center w-full">
+      <div className="w-full mx-4 md:mx-12 lg:mx-20 bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm px-4 py-3 flex justify-between items-center z-10 transition-all duration-300 rounded-xl mt-4 border-[0.5px] border-gray-100 dark:border-gray-700 shadow-sm">
+        <div className="flex items-center">
+          <img
+            src="téléchargement.png"
+            alt="NETCOM"
+            className="h-7 w-auto hidden md:block"
+          />
+        </div>
+        <div className="flex items-center space-x-4">
+          <nav className="space-x-6 hidden md:flex">
+            <Link
+              to="/home"
+              className={`text-sm ${
+                location.pathname === "/home"
+                  ? "text-orange-500"
+                  : "text-gray-700 dark:text-gray-200"
+              } hover:text-orange-500 dark:hover:text-orange-400 transition font-medium relative group`}
+            >
+              Accueil
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
+            </Link>
+            <Link
+              to="/documents"
+              className={`text-sm ${
+                location.pathname === "/documents"
+                  ? "text-orange-500"
+                  : "text-gray-700 dark:text-gray-200"
+              } hover:text-orange-500 dark:hover:text-orange-400 transition font-medium relative group`}
+            >
+              Documents
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
+            </Link>
+            <Link
+              to="/chat"
+              className={`text-sm ${
+                location.pathname === "/chat"
+                  ? "text-orange-500"
+                  : "text-gray-700 dark:text-gray-200"
+              } hover:text-orange-500 dark:hover:text-orange-400 transition font-medium relative group`}
+            >
+              Chat
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
+            </Link>
+          </nav>
+          <button
+            onClick={toggleDarkMode}
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Toggle dark mode"
           >
-            Documents
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
-          </Link>
-          <Link
-            to="/chat"
-            className="text-sm text-gray-700 dark:text-gray-200 hover:text-orange-500 dark:hover:text-orange-400 transition font-medium relative group"
-          >
-            Chat
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
-          </Link>
-        </nav>
-        <button
-          onClick={toggleDarkMode}
-          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          aria-label="Toggle dark mode"
-        >
-          {darkMode ? (
-            <MdLightMode className="text-yellow-400" size={18} />
-          ) : (
-            <MdDarkMode className="text-gray-600" size={18} />
-          )}
-        </button>
+            {darkMode ? (
+              <MdLightMode className="text-yellow-400" size={18} />
+            ) : (
+              <MdDarkMode className="text-gray-600" size={18} />
+            )}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Sidebar Component with enhanced UI
 interface SidebarProps {
@@ -138,7 +164,22 @@ const Sidebar = ({ isCollapsed, toggleCollapse, darkMode }: SidebarProps) => {
         </button>
       </div>
       <nav className="space-y-2 px-4">
-        <Link to="/" className={linkClass("/")} title="Documents">
+        <Link to="/home" className={linkClass("/home")} title="Accueil">
+          <div className="flex items-center w-full">
+            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-orange-50 dark:bg-gray-700">
+              <MdHome
+                size={22}
+                className="text-orange-500 dark:text-orange-400"
+              />
+            </div>
+            {!isCollapsed && <span className="ml-3 truncate">Accueil</span>}
+          </div>
+        </Link>
+        <Link
+          to="/documents"
+          className={linkClass("/documents")}
+          title="Documents"
+        >
           <div className="flex items-center w-full">
             <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-orange-50 dark:bg-gray-700">
               <MdFolderOpen
@@ -146,7 +187,7 @@ const Sidebar = ({ isCollapsed, toggleCollapse, darkMode }: SidebarProps) => {
                 className="text-orange-500 dark:text-orange-400"
               />
             </div>
-            {!isCollapsed && <span className="ml-3 truncate">Add Documents</span>}
+            {!isCollapsed && <span className="ml-3 truncate">Documents</span>}
           </div>
         </Link>
         <Link to="/chat" className={linkClass("/chat")} title="Chat">
@@ -166,8 +207,6 @@ const Sidebar = ({ isCollapsed, toggleCollapse, darkMode }: SidebarProps) => {
 };
 
 // Card component for consistent UI - Keeping this for the Upload section only
-import { ReactNode } from "react";
-
 const Card = ({
   children,
   className = "",
@@ -221,8 +260,15 @@ const App = () => {
           {/* Pages */}
           <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
             <Routes>
+              {/* Redirection de la racine vers la page d'accueil */}
+              <Route path="/" element={<Navigate to="/home" />} />
+
+              {/* Page d'accueil */}
+              <Route path="/home" element={<HomePage />} />
+
+              {/* Page de documents */}
               <Route
-                path="/"
+                path="/documents"
                 element={
                   <div className="w-full max-w-5xl mx-auto space-y-6">
                     <div className="flex items-center justify-between mb-6">
@@ -254,6 +300,8 @@ const App = () => {
                   </div>
                 }
               />
+
+              {/* Page de chat */}
               <Route
                 path="/chat"
                 element={
